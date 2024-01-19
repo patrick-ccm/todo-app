@@ -2,13 +2,6 @@
 import axios from "axios"
 import { onMounted, ref } from "vue"
 
-type TodoResponse = {
-  code: number
-  data: TodoData[]
-}
-
-type TodoObject = Omit<TodoData, "createdAt" | "updatedAt" | "__v" | "_id">
-
 type TodoData = {
   isComplete: boolean
   todoName: string
@@ -17,6 +10,13 @@ type TodoData = {
   __v: number
   _id: string
 }
+
+type TodoResponse = {
+  code: number
+  data: TodoData[]
+}
+
+type TodoObject = Omit<TodoData, "createdAt" | "updatedAt" | "__v" | "_id">
 
 const title = ref("")
 const complete = ref(false)
@@ -33,7 +33,7 @@ const getTodos = async () => {
     console.log(data)
     return data.data
   } catch (error) {
-    console.error(error)
+    throw error
   }
 }
 
@@ -111,7 +111,7 @@ const filterComplete = (isComplete: boolean) => {
 
 onMounted(async () => {
   allData.value = await getTodos()
-  holderArr.value = allData.value.map((x) => x)
+  holderArr.value = await getTodos()
   console.log(allData.value)
 })
 </script>
