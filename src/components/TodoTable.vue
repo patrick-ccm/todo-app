@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import axios from "axios"
-import { onMounted, ref } from "vue"
+import { computed, onMounted, ref } from "vue"
+import { RouterLink,useRouter } from 'vue-router'
+
+const router = useRouter()
 
 type TodoData = {
   isComplete: boolean
@@ -16,14 +19,25 @@ type TodoResponse = {
   data: TodoData[]
 }
 
-type TodoObject = Omit<TodoData, "createdAt" | "updatedAt" | "__v" | "_id">
+// type TodoObject = Omit<TodoData, "createdAt" | "updatedAt" | "__v" | "_id">
 
-const title = ref("")
-const complete = ref(false)
+// const title = ref("")
+// const complete = ref(false)
+const isCompleteFilter = ref(true)
 const allData = ref<TodoData[]>([])
 const searchParam = ref("")
-const holderArr = ref<TodoData[]>([])
-const showError = ref(false)
+const showArrType = ref<"search" | "filter">("search")
+const searchArr = computed(() => {
+  return allData.value.filter((x) =>
+    x.todoName.toLowerCase().includes(searchParam.value.toLowerCase())
+  )
+})
+const filteredArr = computed(() => {
+  return allData.value.filter(
+    (task) => task.isComplete === isCompleteFilter.value
+  )
+})
+//const showError = ref(false)
 
 const getTodos = async () => {
   try {
@@ -37,24 +51,24 @@ const getTodos = async () => {
   }
 }
 
-const addTodo = async (requestBody: TodoObject) => {
-  if (!requestBody.isComplete || !requestBody.todoName) {
-    showError.value = true
-    return
-  }
-  try {
-    await axios.post<TodoData>(
-      "https://calm-plum-jaguar-tutu.cyclic.app/todos",
-      {
-        todoName: requestBody.todoName,
-        isComplete: requestBody.isComplete,
-      }
-    )
-    location.reload()
-  } catch (error) {
-    console.error(error)
-  }
-}
+// const addTodo = async (requestBody: TodoObject) => {
+//   if (!requestBody.todoName) {
+//     showError.value = true
+//     return
+//   }
+//   try {
+//     await axios.post<TodoData>(
+//       "https://calm-plum-jaguar-tutu.cyclic.app/todos",
+//       {
+//         todoName: requestBody.todoName,
+//         isComplete: requestBody.isComplete,
+//       }
+//     )
+//     location.reload()
+//   } catch (error) {
+//     console.error(error)
+//   }
+// }
 
 const updateTodo = async (id: string, isComplete: boolean) => {
   try {
@@ -79,40 +93,31 @@ const deleteTodo = async (id: string) => {
 }
 
 const sortTodo = (sortType: string) => {
-  allData.value.sort((a, b) => {
-    const todoA = a.todoName.toUpperCase()
-    const todoB = b.todoName.toUpperCase()
-    if (sortType === "asc") {
-      return todoA < todoB ? -1 : 1
-    } else {
-      return todoA > todoB ? -1 : 1
-    }
-  })
-}
-
-const searchTodo = (searchParams: string) => {
-  allData.value = holderArr.value
-  allData.value = allData.value.filter((x) => {
-    return x.todoName.includes(searchParams)
-  })
-  searchParam.value = ""
+  if (sortType === "asc") {
+    allData.value.sort((a, b) => a.todoName.localeCompare(b.todoName))
+  } else {
+    allData.value.sort((a, b) => b.todoName.localeCompare(a.todoName))
+  }
 }
 
 const filterComplete = (isComplete: boolean) => {
-  allData.value = holderArr.value
-  allData.value = allData.value.filter((x) => {
-    if (isComplete) {
-      return x.isComplete
-    } else {
-      return !x.isComplete
-    }
-  })
+  isCompleteFilter.value = isComplete
+  showArrType.value = "filter"
+}
+
+const searchTodo = () => {
+  showArrType.value = "search"
+}
+
+// const taskCreation = (event) => {
+//   addTodo({todoName:event.taskName, isComplete:event.completionStatus})
+// }
+const goToDetails = (id:string) => {
+  router.push({path:'/detailsPage', query:{id: id}})
 }
 
 onMounted(async () => {
   allData.value = await getTodos()
-  holderArr.value = await getTodos()
-  console.log(allData.value)
 })
 </script>
 
@@ -120,8 +125,7 @@ onMounted(async () => {
   <div>
     <h2>Todo App</h2>
     <label for="search"> Search </label>
-    <input id="search" v-model="searchParam" />
-    <button @click="searchTodo(searchParam)">Go</button>
+    <input id="search" v-model="searchParam" @focus="searchTodo" />
     <div>
       <h2>Filter by Completion</h2>
       <button @click="filterComplete(true)">Complete</button>
@@ -142,16 +146,25 @@ onMounted(async () => {
       <th>Complete?</th>
       <th>Actions</th>
     </tr>
-    <tr v-for="item in allData">
+    <tr v-for="item in filteredArr" v-if="showArrType === 'filter'">
       <th>{{ item.todoName }}</th>
       <th>{{ item.isComplete }}</th>
       <th>
-        <button @click="updateTodo(item._id, !item.isComplete)">Update</button>
+        <button @click="goToDetails(item._id)">Update</button>
+        <button @click="deleteTodo(item._id)">Delete</button>
+      </th>
+    </tr>
+    <tr v-for="item in searchArr" v-if="showArrType === 'search'">
+      <th>{{ item.todoName }}</th>
+      <th>{{ item.isComplete }}</th>
+      <th>
+        <button @click="goToDetails(item._id)">Update</button>
         <button @click="deleteTodo(item._id)">Delete</button>
       </th>
     </tr>
   </table>
-  <div>
+  
+  <!-- <div>
     <h2>Create new Task</h2>
     <label>Task Title:</label>
     <input v-model="title" />
@@ -176,7 +189,9 @@ onMounted(async () => {
       Create
     </button>
     <h3 v-if="showError" class="error">ERROR ENTER A NAME</h3>
-  </div>
+  </div> -->
+  <RouterLink to="/addTask">Add Task</RouterLink>
+  
 </template>
 
 <style scoped>

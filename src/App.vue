@@ -1,9 +1,12 @@
 <script setup lang="ts">
-import TodoTable from './components/TodoTable.vue';
+import { RouterLink, RouterView } from 'vue-router'
 </script>
 
 <template>
-  <todo-table></todo-table>
+  <nav>
+        <RouterLink to="/">Todo</RouterLink>
+      </nav>
+  <RouterView></RouterView>
 </template>
 
 <style scoped>
