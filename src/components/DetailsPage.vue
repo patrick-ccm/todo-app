@@ -1,43 +1,53 @@
 <script setup lang="ts">
-import axios from "axios"
 import { computed, onMounted, ref } from "vue"
 import { useRoute } from 'vue-router'
+import {TodoData, TodoObject, TodoResponse} from '../todo'
+import {addTodo, deleteTodo, getTodos} from '../apicalls'
+import { useRouter } from "vue-router"
 
 const route = useRoute()
+const router = useRouter()
 
-type TodoData = {
-  isComplete: boolean
-  todoName: string
-  createdAt: string
-  updatedAt: string
-  __v: number
-  _id: string
-}
-const currentTodo = ref<TodoData>({
-  isComplete: false,
-  todoName: "",
-  createdAt: "",
-  updatedAt: "",
-  __v: 0,
-  _id: "",
-})
+const currentTodo = ref<TodoData>()
 
-const fetchTodo = async (id: string) => {
-  const { data } = await axios.get<TodoData>(
-    `https://calm-plum-jaguar-tutu.cyclic.app/todos/${id}`
-  )
-  return data
+const applyChanges =() => {
+  deleteTodo(currentTodo.value?._id as string)
+  const data = addTodo({todoName: currentTodo.value?.todoName as string, isComplete: currentTodo.value?.isComplete as boolean})
+  console.log(data)
+  router.push({ path: "/" })
 }
 
 onMounted(async () => {
     console.log(route.query.id)
-    currentTodo.value = await fetchTodo(route.query.id)
+    currentTodo.value = await getTodos(route.query.id as string) as TodoData
+    
 })
+
+
 </script>
 
 <template>
   <h2>Details</h2>
-  <p>TaskName:</p>
-  <p>Completion Status:</p>
-  <p>{{currentTodo}}</p>
+  <div v-if="currentTodo">
+    <label for="task-name">Task Name: </label>
+    <input id="task-name" v-model="currentTodo.todoName">
+    <label for="completion-status">Completion Status: </label>
+    <label for="isComplete">True</label>
+    <input
+      type="radio"
+      :value="true"
+      id="isComplete"
+      name="option"
+      v-model="currentTodo.isComplete"
+    />
+    <label for="isNotComplete">False</label>
+    <input
+      type="radio"
+      :value="false"
+      id="isNotComplete"
+      name="option"
+      v-model="currentTodo.isComplete"
+    />
+    <button @click="applyChanges">Apply Changes</button>
+  </div>
 </template>

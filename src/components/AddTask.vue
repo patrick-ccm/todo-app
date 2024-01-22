@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { ref } from "vue"
 import { useVuelidate } from "@vuelidate/core"
-import { required, alphaNum, helpers } from "@vuelidate/validators"
+import { required, helpers } from "@vuelidate/validators"
 import { useRouter } from "vue-router"
-import axios from "axios"
+import {addTodo} from '../apicalls'
 
 const router = useRouter()
 type FormData = {
@@ -39,26 +39,10 @@ const rules = {
 
 const vuelidate = useVuelidate(rules, formData.value)
 
-const addTodo = async (requestBody: TodoObject) => {
-  try {
-    await axios.post<TodoData>(
-      "https://calm-plum-jaguar-tutu.cyclic.app/todos",
-      {
-        todoName: requestBody.todoName,
-        isComplete: requestBody.isComplete,
-      }
-    )
-    location.reload()
-  } catch (error) {
-    console.error(error)
-  }
-}
-
 const createTask = () => {
   vuelidate.value.$touch()
   console.log(formData)
   if (!vuelidate.value.$invalid) {
-    // emit("create-task", formData.value)
     addTodo({todoName:formData.value.taskName, isComplete:formData.value.completionStatus})
     router.push({ path: "/" })
   }
