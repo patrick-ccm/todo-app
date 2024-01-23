@@ -4,23 +4,47 @@ import { useRoute } from "vue-router"
 import { TodoData } from "../todo"
 import { addTodo, deleteTodo, getTodos } from "../apicalls"
 import { useRouter } from "vue-router"
+import { useVuelidate } from "@vuelidate/core"
+import { rules } from "../vuelidateRules"
 
-const currentTodo = ref<TodoData>()
+const currentTodo = ref<TodoData>({
+  isComplete: false,
+    todoName: '',
+    createdAt: '',
+    updatedAt: '',
+    __v: 0,
+    _id: ''
+})
 const route = useRoute()
 const router = useRouter()
-const todoName= ref<string>('')
-const applyChanges = () => {
-  addTodo({todoName: currentTodo.value?.todoName as string, isComplete: currentTodo.value?.isComplete as boolean})
-  deleteTodo(currentTodo.value?._id as string)
+//const todoName= ref<string>('')
+// const applyChanges = () => {
+//   addTodo({todoName: currentTodo.value?.todoName as string, isComplete: currentTodo.value?.isComplete as boolean})
+//   deleteTodo(currentTodo.value?._id as string)
   
-  router.push({ path: "/" })
+//   router.push({ path: "/" })
+// }
+
+const vuelidate= useVuelidate(rules, currentTodo)
+
+const applyChanges = () => {
+  vuelidate.value.$touch()
+  console.log(currentTodo.value)
+  if (!vuelidate.value.$invalid) {
+    deleteTodo(currentTodo.value?._id as string)
+    addTodo({
+      todoName: currentTodo.value?.todoName as string,
+      isComplete: currentTodo.value?.isComplete as boolean,
+    })
+    router.push({ path: "/" })
+  }
 }
 
 
 onMounted(async () => {
   currentTodo.value = (await getTodos(route.query.id as string)) as TodoData
-  todoName.value = currentTodo.value.todoName
-  console.log(todoName.value)
+  //todoName.value = currentTodo.value.todoName
+  //console.log(todoName.value)
 })
 
 </script>
@@ -48,8 +72,8 @@ onMounted(async () => {
       v-model="currentTodo.isComplete"
     />
     <button @click="applyChanges">Apply Changes</button>
-    <!-- <p v-if="vuelidate.todoName.$error">
+    <p v-if="vuelidate.todoName.$error">
       Error: {{ vuelidate.todoName.$errors[0].$message }}
-    </p> -->
+    </p>
   </div>
 </template>
