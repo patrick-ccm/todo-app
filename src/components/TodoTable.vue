@@ -1,127 +1,83 @@
 <script setup lang="ts">
-import axios from "axios"
-import { onMounted, ref } from "vue"
+import { computed, onMounted, ref } from "vue";
+import axios from "axios";
+import { RouterLink, useRouter } from "vue-router";
+import { deleteTodo } from '../apicalls'
+
+const router = useRouter();
 
 type TodoData = {
-  isComplete: boolean
-  todoName: string
-  createdAt: string
-  updatedAt: string
-  __v: number
-  _id: string
-}
+  isComplete: boolean;
+  todoName: string;
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
+  _id: string;
+};
 
 type TodoResponse = {
-  code: number
-  data: TodoData[]
-}
-
-type TodoObject = Omit<TodoData, "createdAt" | "updatedAt" | "__v" | "_id">
-
-const title = ref("")
-const complete = ref(false)
-const allData = ref<TodoData[]>([])
-const searchParam = ref("")
-const holderArr = ref<TodoData[]>([])
-const showError = ref(false)
+  code: number;
+  data: TodoData[];
+};
+const isCompleteFilter = ref(true);
+const allData = ref<TodoData[]>([]);
+const searchParam = ref("");
+const showArrType = ref<"search" | "filter">("search");
+const searchArr = computed(() => {
+  return allData.value.filter((x) =>
+    x.todoName.toLowerCase().includes(searchParam.value.toLowerCase())
+  );
+});
+const filteredArr = computed(() => {
+  return allData.value.filter(
+    (task) => task.isComplete === isCompleteFilter.value
+  );
+});
 
 const getTodos = async () => {
   try {
     const { data } = await axios.get<TodoResponse>(
       "https://calm-plum-jaguar-tutu.cyclic.app/todos"
-    )
-    console.log(data)
-    return data.data
+    );
+    console.log(data);
+    return data.data;
   } catch (error) {
-    throw error
+    throw error;
   }
-}
+};
 
-const addTodo = async (requestBody: TodoObject) => {
-  if (!requestBody.isComplete || !requestBody.todoName) {
-    showError.value = true
-    return
-  }
-  try {
-    await axios.post<TodoData>(
-      "https://calm-plum-jaguar-tutu.cyclic.app/todos",
-      {
-        todoName: requestBody.todoName,
-        isComplete: requestBody.isComplete,
-      }
-    )
-    location.reload()
-  } catch (error) {
-    console.error(error)
-  }
-}
-
-const updateTodo = async (id: string, isComplete: boolean) => {
-  try {
-    await axios.put(`https://calm-plum-jaguar-tutu.cyclic.app/todos/${id}`, {
-      isComplete: isComplete,
-    })
-    location.reload()
-  } catch (error) {
-    console.error(error)
-  }
-}
-
-const deleteTodo = async (id: string) => {
-  try {
-    await axios.delete<TodoData>(
-      `https://calm-plum-jaguar-tutu.cyclic.app/todos/${id}`
-    )
-    location.reload()
-  } catch (error) {
-    console.error(error)
-  }
-}
 
 const sortTodo = (sortType: string) => {
-  allData.value.sort((a, b) => {
-    const todoA = a.todoName.toUpperCase()
-    const todoB = b.todoName.toUpperCase()
-    if (sortType === "asc") {
-      return todoA < todoB ? -1 : 1
-    } else {
-      return todoA > todoB ? -1 : 1
-    }
-  })
-}
-
-const searchTodo = (searchParams: string) => {
-  allData.value = holderArr.value
-  allData.value = allData.value.filter((x) => {
-    return x.todoName.includes(searchParams)
-  })
-  searchParam.value = ""
-}
+  if (sortType === "asc") {
+    allData.value.sort((a, b) => a.todoName.localeCompare(b.todoName));
+  } else {
+    allData.value.sort((a, b) => b.todoName.localeCompare(a.todoName));
+  }
+};
 
 const filterComplete = (isComplete: boolean) => {
-  allData.value = holderArr.value
-  allData.value = allData.value.filter((x) => {
-    if (isComplete) {
-      return x.isComplete
-    } else {
-      return !x.isComplete
-    }
-  })
-}
+  isCompleteFilter.value = isComplete;
+  showArrType.value = "filter";
+};
+
+const searchTodo = () => {
+  showArrType.value = "search";
+};
+
+const goToDetails = (id: string) => {
+  router.push({ path: "/detailsPage", query: { id: id } });
+};
 
 onMounted(async () => {
-  allData.value = await getTodos()
-  holderArr.value = await getTodos()
-  console.log(allData.value)
-})
+  allData.value = await getTodos();
+});
 </script>
 
 <template class="todo-app">
   <div>
     <h2>Todo App</h2>
     <label for="search"> Search </label>
-    <input id="search" v-model="searchParam" />
-    <button @click="searchTodo(searchParam)">Go</button>
+    <input id="search" v-model="searchParam" @focus="searchTodo" />
     <div>
       <h2>Filter by Completion</h2>
       <button @click="filterComplete(true)">Complete</button>
@@ -142,41 +98,31 @@ onMounted(async () => {
       <th>Complete?</th>
       <th>Actions</th>
     </tr>
-    <tr v-for="item in allData">
-      <th>{{ item.todoName }}</th>
-      <th>{{ item.isComplete }}</th>
-      <th>
-        <button @click="updateTodo(item._id, !item.isComplete)">Update</button>
-        <button @click="deleteTodo(item._id)">Delete</button>
-      </th>
-    </tr>
+    <tbody>
+      <template v-if="showArrType === 'search'">
+        <tr v-for="item in searchArr" :key="item._id">
+          <td>{{ item.todoName }}</td>
+          <td>{{ item.isComplete }}</td>
+          <td>
+            <button @click="goToDetails(item._id)">Details</button>
+            <button @click="deleteTodo(item._id)">Delete</button>
+          </td>
+        </tr>
+      </template>
+      <template v-else>
+        <tr v-for="item in filteredArr" :key="item._id">
+          <td>{{ item.todoName }}</td>
+          <td>{{ item.isComplete }}</td>
+          <td>
+            <button @click="goToDetails(item._id)">Details</button>
+            <button @click="deleteTodo(item._id)">Delete</button>
+          </td>
+        </tr>
+      </template>
+    </tbody>
   </table>
-  <div>
-    <h2>Create new Task</h2>
-    <label>Task Title:</label>
-    <input v-model="title" />
-    <p>Is it Complete?</p>
-    <label for="isComplete">Yes</label>
-    <input
-      type="radio"
-      :value="true"
-      id="isComplete"
-      name="option"
-      v-model="complete"
-    />
-    <label for="isNotComplete">No</label>
-    <input
-      type="radio"
-      :value="false"
-      id="isNotComplete"
-      name="option"
-      v-model="complete"
-    />
-    <button @click="addTodo({ todoName: title, isComplete: complete })">
-      Create
-    </button>
-    <h3 v-if="showError" class="error">ERROR ENTER A NAME</h3>
-  </div>
+
+  <RouterLink to="/addTask">Add Task</RouterLink>
 </template>
 
 <style scoped>
