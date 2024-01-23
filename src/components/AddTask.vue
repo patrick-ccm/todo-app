@@ -16,17 +16,6 @@ const formData = ref<FormData>({
   isComplete: false,
 })
 
-// const mustBeVue = (value: string) => value.includes("vue")
-// const alphaNumSpace = helpers.regex(/^[\w\-\s]+$/)
-
-// const rules = {
-//   taskName: {
-//     mustBeVue: helpers.withMessage("Task name must have vue in it", mustBeVue),
-//     alphaNumSpace: helpers.withMessage("No symbols", alphaNumSpace),
-//   },
-//   completionStatus: { required },
-// }
-
 const vuelidate = useVuelidate(rules, formData.value)
 
 const createTask = () => {

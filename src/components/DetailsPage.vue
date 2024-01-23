@@ -4,14 +4,11 @@ import { useRoute } from "vue-router"
 import { TodoData } from "../todo"
 import { addTodo, deleteTodo, getTodos } from "../apicalls"
 import { useRouter } from "vue-router"
-// import { useVuelidate } from "@vuelidate/core"
-// import { rules } from "../vuelidateRules"
 
 const currentTodo = ref<TodoData>()
 const route = useRoute()
 const router = useRouter()
 const todoName= ref<string>('')
-// let vuelidate;
 const applyChanges = () => {
   addTodo({todoName: currentTodo.value?.todoName as string, isComplete: currentTodo.value?.isComplete as boolean})
   deleteTodo(currentTodo.value?._id as string)
@@ -24,26 +21,8 @@ onMounted(async () => {
   currentTodo.value = (await getTodos(route.query.id as string)) as TodoData
   todoName.value = currentTodo.value.todoName
   console.log(todoName.value)
-  // vuelidate= useVuelidate(rules, {
-  //   todoName: currentTodo.value?.isComplete,
-  //   isComplete: currentTodo.value?.isComplete,
-  // })
 })
 
-
-
-// const applyChanges = () => {
-//   vuelidate.value.$touch()
-//   console.log(vuelidate.value.todoName)
-//   if (!vuelidate.value.$invalid) {
-//     deleteTodo(currentTodo.value?._id as string)
-//     addTodo({
-//       todoName: currentTodo.value?.todoName as string,
-//       isComplete: currentTodo.value?.isComplete as boolean,
-//     })
-//     router.push({ path: "/" })
-//   }
-// }
 </script>
 
 <template>
