@@ -21,7 +21,6 @@ export const getTodos = async (id?:string): Promise<TodoData | TodoData[]> => {
       const { data } = await axios.get<TodoResponse>(
         `https://calm-plum-jaguar-tutu.cyclic.app/todos/${id}`
       );
-      console.log(data);
       return data.data;
     } catch (error) {
       throw error;

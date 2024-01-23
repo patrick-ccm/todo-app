@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from "vue";
 import axios from "axios";
 import { RouterLink, useRouter } from "vue-router";
-import { deleteTodo} from '../apicalls'
+import { deleteTodo } from '../apicalls'
 
 const router = useRouter();
 
